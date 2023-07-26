@@ -1,0 +1,29 @@
+#!/bin/bash
+
+search_path="$HOME/.config/tldro/pages"
+
+if [ -z "$1" ]; then
+	echo "Usage: $0 <command>"
+	exit 1
+fi
+
+function search_file_in_subfolders() {
+	local folder_path=$1
+	local file_name="$2.md"
+	local found=0
+
+	while IFS= read -r -d '' file; do
+		mdcat "$file"
+		found=1
+		break
+	done < <(find "$folder_path" -type f -name "$file_name" -print0)
+
+	return $found
+}
+
+search_file_in_subfolders "$search_path" "$1"
+found=$?
+
+if [ $found -eq 0 ]; then
+	echo "'$1' documentation is not available."
+fi
