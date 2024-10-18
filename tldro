@@ -2,28 +2,56 @@
 
 search_path="$HOME/.config/tldro/pages"
 
+if [ ! -d "$search_path" ]; then
+  echo "Search path '$search_path' does not exist."
+  echo "did you forget to clone tldr git repo?"
+  echo "trying to clone it on your behalf..."
+  git clone https://github.com/tldr-pages/tldr ~/.config/tldro
+fi
+
 if [ -z "$1" ]; then
-	echo "Usage: $0 <command>"
-	exit 1
+  echo "Usage: $0 <command> --> search for command"
+  echo "       $0 -u        --> update tldr git repo"
+  exit 1
+fi
+
+if [ "$1" == "-u" ]; then
+  original_dir=$(pwd)
+
+  cd "$search_path" || {
+    echo "Failed to change directory to '$search_path'"
+    exit 1
+  }
+
+  echo "Running 'git pull' in '$search_path'..."
+  git pull
+
+  cd "$original_dir" || {
+    echo "Failed to return to original directory"
+    exit 1
+  }
+
+  echo "Update complete."
+  exit 0
 fi
 
 function search_file_in_subfolders() {
-	local folder_path=$1
-	local file_name="$2.md"
-	local found=0
+  local folder_path="$1"
+  local file_name="$2.md"
+  local found=0
 
-	while IFS= read -r -d '' file; do
-		mdcat "$file"
-		found=1
-		break
-	done < <(find "$folder_path" -type f -name "$file_name" -print0)
+  while IFS= read -r -d '' file; do
+    mdcat "$file"
+    found=1
+    break
+  done < <(find "$folder_path" -type f -name "$file_name" -print0)
 
-	return $found
+  return $found
 }
 
 search_file_in_subfolders "$search_path" "$1"
 found=$?
 
 if [ $found -eq 0 ]; then
-	echo "'$1' documentation is not available."
+  echo "'$1' documentation is not available."
 fi
